@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # If the requested resource doesn't exist as a file or directory,
+  # rewrite the request to index.html so the SPA router can handle it.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L,QSA]
+</IfModule>
+
+# Fallback for environments without mod_rewrite; serve index.html by default.
+DirectoryIndex index.html

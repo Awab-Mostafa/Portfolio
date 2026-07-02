@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./public/Designer.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dev_Awab</title>
+    <script>
+      (function () {
+        var storageKey = "portfolio-theme";
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        try {
+          var storedTheme = window.localStorage.getItem(storageKey);
+          var shouldUseDark = storedTheme === "dark" || (!storedTheme && prefersDark);
+          document.documentElement.classList.toggle("dark", shouldUseDark);
+        } catch (error) {
+          document.documentElement.classList.toggle("dark", prefersDark);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
