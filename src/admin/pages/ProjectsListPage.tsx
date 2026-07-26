@@ -147,6 +147,23 @@ export default function ProjectsListPage() {
               <DialogDescription>{selectedProject.description}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 text-left">
+              {selectedProject.images && selectedProject.images.length > 0 && (
+                <div className="grid gap-3">
+                  {selectedProject.images.map((image, index) => (
+                    <div key={`${image.url}-${index}`} className="overflow-hidden rounded-xl border border-border/60">
+                      <img src={image.url} alt={image.caption || selectedProject.title} className="max-h-64 w-full object-cover" />
+                      {(image.caption || image.role) && (
+                        <div className="space-y-1 p-3">
+                          {image.caption && <p className="text-sm text-foreground">{image.caption}</p>}
+                          {image.role && (
+                            <p className="text-xs font-medium text-[#3b82f6]">{image.role}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Tech Stack</p>
                 <p className="mt-1 text-sm text-foreground">{selectedProject.tech}</p>

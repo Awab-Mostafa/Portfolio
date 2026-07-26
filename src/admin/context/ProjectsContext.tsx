@@ -16,7 +16,20 @@ import {
 
 import { db } from "@/lib/firebase";
 
-export type Project = { id: string; title: string; description: string; tech: string; url: string };
+export type ProjectImage = {
+  url: string;
+  caption?: string;
+  role?: string;
+};
+
+export type Project = {
+  id: string;
+  title: string;
+  description: string;
+  tech: string;
+  url: string;
+  images?: ProjectImage[];
+};
 type ProjectInput = Omit<Project, "id">;
 
 type ProjectsContextValue = {
@@ -105,5 +118,6 @@ function mapProjectDoc(document: QueryDocumentSnapshot<DocumentData>): Project {
     description: data.description ?? "",
     tech: data.tech ?? "",
     url: data.url ?? "",
+    images: Array.isArray(data.images) ? data.images : [],
   };
 }

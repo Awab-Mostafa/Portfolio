@@ -10,6 +10,21 @@ import { db } from "@/lib/firebase";
 
 type Project = AdminProject & { techStack: string[] };
 
+function ProjectCover({ project }: { project: Project }) {
+  const cover = project.images && project.images.length > 0 ? project.images[0] : null;
+  if (!cover) return null;
+
+  return (
+    <div className="overflow-hidden rounded-t-xl">
+      <img
+        src={cover.url}
+        alt={cover.caption || project.title}
+        className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
+      />
+    </div>
+  );
+}
+
 export default function WebProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +48,7 @@ export default function WebProjects() {
             url: data.url ?? "#",
             tech: data.tech ?? "",
             techStack,
+            images: Array.isArray(data.images) ? data.images : [],
           };
         });
         setProjects(items);
@@ -84,9 +100,10 @@ export default function WebProjects() {
         <div className="grid gap-6 sm:gap-8 md:grid-cols-2 xl:grid-cols-3">
           {projects.map((project, index) => (
             <Reveal key={project.id} delay={0.1 + index * 0.08} className="h-full">
-              <Card className="h-full border border-border/70 bg-background/85 shadow-lg shadow-[#3b82f6
+              <Card className="group h-full overflow-hidden border border-border/70 bg-background/85 shadow-lg shadow-[#3b82f6
 ]/12 transition-all hover:-translate-y-2 hover:border-[#3b82f6
 ]/50 hover:shadow-xl">
+                <ProjectCover project={project} />
                 <CardHeader className="space-y-3">
                   <CardTitle className="text-xl font-semibold text-foreground/90 sm:text-2xl">
                     {project.title}

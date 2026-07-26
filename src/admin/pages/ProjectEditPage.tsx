@@ -41,6 +41,7 @@ export default function ProjectEditPage() {
             description: project.description,
             tech: project.tech,
             url: project.url,
+            images: project.images ?? [],
           }}
           submitLabel="Update"
           onSubmit={handleSubmit}
