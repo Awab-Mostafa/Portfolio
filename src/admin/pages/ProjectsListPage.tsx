@@ -94,22 +94,24 @@ export default function ProjectsListPage() {
           )}
           <div className="grid gap-4">
             {projects.map((project) => (
-              <div key={project.id} className="rounded-xl border border-border/60 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-lg font-semibold">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground">{project.description}</p>
+              <div key={project.id} className="overflow-hidden rounded-xl border border-border/60 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="break-words text-lg font-semibold">{project.title}</h3>
+                    <p className="mt-1 break-words text-sm text-muted-foreground">{project.description}</p>
                     <a
                       href={project.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-2 inline-flex text-xs font-semibold text-[#3b82f6
+                      className="mt-2 inline-flex break-all text-xs font-semibold text-[#3b82f6
 ] transition hover:underline"
                     >
                       {project.url}
                     </a>
                   </div>
-                  <div className="text-xs text-muted-foreground">{project.tech}</div>
+                  <div className="shrink-0 break-words text-xs text-muted-foreground sm:max-w-[220px] sm:text-right">
+                    {project.tech}
+                  </div>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                   <Button variant="secondary" size="sm" onClick={() => handleViewProject(project.id)}>
@@ -140,11 +142,11 @@ export default function ProjectsListPage() {
       </Card>
       <Dialog open={dialogOpen && !!selectedProject} onOpenChange={handleDialogChange}>
         {selectedProject && (
-          <DialogContent className="max-w-xl gap-5 rounded-3xl border border-border/70 bg-background/95 p-6 shadow-2xl shadow-[#3b82f6
-]/25">
+          <DialogContent className="max-w-xl gap-5 overflow-y-auto rounded-3xl border border-border/70 bg-background/95 p-6 shadow-2xl shadow-[#3b82f6
+]/25 max-h-[85vh]">
             <DialogHeader className="text-left">
-              <DialogTitle>{selectedProject.title}</DialogTitle>
-              <DialogDescription>{selectedProject.description}</DialogDescription>
+              <DialogTitle className="break-words">{selectedProject.title}</DialogTitle>
+              <DialogDescription className="break-words">{selectedProject.description}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 text-left">
               {selectedProject.images && selectedProject.images.length > 0 && (
@@ -154,9 +156,9 @@ export default function ProjectsListPage() {
                       <img src={image.url} alt={image.caption || selectedProject.title} className="max-h-64 w-full object-cover" />
                       {(image.caption || image.role) && (
                         <div className="space-y-1 p-3">
-                          {image.caption && <p className="text-sm text-foreground">{image.caption}</p>}
+                          {image.caption && <p className="break-words text-sm text-foreground">{image.caption}</p>}
                           {image.role && (
-                            <p className="text-xs font-medium text-[#3b82f6]">{image.role}</p>
+                            <p className="break-words text-xs font-medium text-[#3b82f6]">{image.role}</p>
                           )}
                         </div>
                       )}
@@ -166,7 +168,7 @@ export default function ProjectsListPage() {
               )}
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Tech Stack</p>
-                <p className="mt-1 text-sm text-foreground">{selectedProject.tech}</p>
+                <p className="mt-1 break-words text-sm text-foreground">{selectedProject.tech}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Website</p>
@@ -174,7 +176,7 @@ export default function ProjectsListPage() {
                   href={selectedProject.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-1 inline-flex text-sm font-semibold text-[#3b82f6
+                  className="mt-1 inline-flex break-all text-sm font-semibold text-[#3b82f6
 ] transition hover:underline"
                 >
                   {selectedProject.url}
