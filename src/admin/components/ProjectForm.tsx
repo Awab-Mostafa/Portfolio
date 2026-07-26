@@ -1,6 +1,5 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { Check, ImagePlus, Loader2, Plus, X } from "lucide-react";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { storage } from "@/lib/firebase";
 import type { ProjectImage } from "@/admin/context/ProjectsContext";
 
 const TECH_OPTIONS = [
@@ -23,6 +21,17 @@ const TECH_OPTIONS = [
 ];
 
 const OTHER_OPTION_VALUE = "__other__";
+
+// Cloudinary config — cloud name comes from your dashboard URL
+// (console.cloudinary.com/console -> "Cloud name" at the top).
+// Never put your API Secret here; the unsigned preset name is all that's needed.
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string;
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+// Client-side guardrails since we're using an unsigned preset.
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 // Represents one image row in the form. `file` holds a newly picked file that
 // still needs to be uploaded. `url` holds an already-uploaded/existing image.
@@ -61,6 +70,25 @@ function parseTechList(value: string) {
 
 function createLocalId() {
   return `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+  const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.error?.message ?? "Cloudinary upload failed");
+  }
+
+  const data = (await response.json()) as { secure_url: string };
+  return data.secure_url;
 }
 
 export default function ProjectForm({ initialValues, submitLabel, onSubmit, onCancel }: ProjectFormProps) {
@@ -109,15 +137,34 @@ export default function ProjectForm({ initialValues, submitLabel, onSubmit, onCa
 
   const handleFilesSelected = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-    const newDrafts: ImageDraft[] = Array.from(fileList).map((file) => ({
-      localId: createLocalId(),
-      file,
-      previewUrl: URL.createObjectURL(file),
-      caption: "",
-      role: "",
-      uploading: false,
-    }));
-    setImages((prev) => [...prev, ...newDrafts]);
+
+    const accepted: ImageDraft[] = [];
+    const rejected: string[] = [];
+
+    Array.from(fileList).forEach((file) => {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        rejected.push(`${file.name} (صيغة غير مسموحة)`);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        rejected.push(`${file.name} (الحجم أكبر من 5MB)`);
+        return;
+      }
+      accepted.push({
+        localId: createLocalId(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+        caption: "",
+        role: "",
+        uploading: false,
+      });
+    });
+
+    if (rejected.length > 0) {
+      setSubmitError(`تم تجاهل بعض الملفات: ${rejected.join(", ")}`);
+    }
+
+    setImages((prev) => [...prev, ...accepted]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -137,7 +184,6 @@ export default function ProjectForm({ initialValues, submitLabel, onSubmit, onCa
     setSubmitting(true);
 
     try {
-      // Upload any newly-picked files that don't have a hosted URL yet.
       const uploadedImages: ProjectImage[] = [];
       for (const image of images) {
         if (image.url) {
@@ -153,12 +199,9 @@ export default function ProjectForm({ initialValues, submitLabel, onSubmit, onCa
           setImages((prev) =>
             prev.map((item) => (item.localId === image.localId ? { ...item, uploading: true } : item)),
           );
-          const path = `projects/${Date.now()}-${image.file.name}`;
-          const storageRef = ref(storage, path);
-          await uploadBytes(storageRef, image.file);
-          const downloadUrl = await getDownloadURL(storageRef);
+          const secureUrl = await uploadToCloudinary(image.file);
           uploadedImages.push({
-            url: downloadUrl,
+            url: secureUrl,
             caption: image.caption.trim(),
             role: image.role.trim(),
           });
@@ -175,7 +218,7 @@ export default function ProjectForm({ initialValues, submitLabel, onSubmit, onCa
       });
     } catch (error) {
       console.error("Failed to save project:", error);
-      setSubmitError("Something went wrong while uploading images. Please try again.");
+      setSubmitError("حصل خطأ أثناء رفع الصور. حاول تاني.");
     } finally {
       setSubmitting(false);
     }
@@ -319,13 +362,13 @@ export default function ProjectForm({ initialValues, submitLabel, onSubmit, onCa
         <div className="grid gap-4 rounded-2xl border border-border/60 bg-background/70 p-4">
           <p className="text-xs text-muted-foreground">
             Optional. Upload screenshots from the project itself, then describe each one and note your
-            role in it (e.g. "Built the checkout flow" or "Designed the dashboard UI").
+            role in it (e.g. "Built the checkout flow" or "Designed the dashboard UI"). JPG/PNG/WEBP only, max 5MB each.
           </p>
 
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             multiple
             className="hidden"
             onChange={(event) => handleFilesSelected(event.target.files)}
